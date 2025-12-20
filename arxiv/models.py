@@ -88,25 +88,44 @@ class WorkType(models.Model):
 
 # --- Основная таблица архива ---
 class Arxiv(models.Model):
-    reg_num = models.CharField(max_length=100, unique=True)       # регистрационный номер
-    reg_date = models.DateField()                                  # дата регистрации
-    customer = models.CharField(max_length=255)                    # заказчик
+    reg_num = models.CharField("Ro`yxatga olingan raqami", max_length=100, unique=True)       # регистрационный номер
+    reg_date = models.DateField('Sana')                                  # дата регистрации
+    customer = models.CharField('Buyurtmachi', max_length=255)                    # заказчик
 
-    prog = models.ForeignKey(Prog, on_delete=models.PROTECT, related_name="arxiv_items")
-    region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name="arxiv_items")
-    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="arxiv_items")
+    prog = models.ForeignKey(
+        Prog,
+        verbose_name="Dastur nomi",
+        on_delete=models.PROTECT,
+        related_name="arxiv_items"
+    )
 
-    object_type = models.ForeignKey(ObjectType, on_delete=models.PROTECT, related_name="arxiv_items")
-    object_name = models.CharField(max_length=255)                 # наименование объекта
+    region = models.ForeignKey(
+        Region,
+        verbose_name="Viloyat",
+        on_delete=models.PROTECT,
+        related_name="arxiv_items"
+    )
+
+    district = models.ForeignKey(
+        District, 
+        verbose_name="Tuman",
+        on_delete=models.PROTECT, 
+        related_name="arxiv_items"
+    )
+    
+    
+
+    object_type = models.ForeignKey(ObjectType, verbose_name="Obyekt turi", on_delete=models.PROTECT, related_name="arxiv_items")
+    object_name = models.CharField('Ob`yekt nomi', max_length=255)                 # наименование объекта
 
     work_type = models.ForeignKey(WorkType, on_delete=models.PROTECT, related_name="arxiv_items")
 
-    signed_person = models.CharField(max_length=255)               # подписавший человек
-    branch_manager = models.CharField(max_length=255)              # руководитель филиала
-    specialist = models.CharField(max_length=255)                  # специалист
+    signed_person = models.CharField('Bayonnomani imzolagan shaxs', max_length=255)               # подписавший человек
+    branch_manager = models.CharField('Filial rahbari', max_length=255)              # руководитель филиала
+    specialist = models.CharField('Sinov o`tkazgan mutaxassis', max_length=255)                  # специалист
 
-    is_mutch = models.BooleanField(default=False)                  # boolean
-    book_number = models.CharField(max_length=100, blank=True)     # номер книги архива
+    is_mutch = models.BooleanField('Muvofiq', default=False)                  # boolean
+    book_number = models.CharField('Kitob raqami', max_length=100, blank=True)     # номер книги архива
 
     pdf = models.ForeignKey(
         PdfStorage,
