@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Arxiv</title>
+</head>
+<body>
+  <h2>Arxiv</h2>
+
+  <div style="margin-bottom:12px;">
+    <a href="{% url 'arxiv_create' %}">+ Добавить запись</a>
+  </div>
+
+  <form method="get" style="margin-bottom:12px;">
+    <input name="q" value="{{ q }}" placeholder="Поиск: reg_num, заказчик, объект..." />
+    <button type="submit">Найти</button>
+  </form>
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Reg №</th>
+        <th>Дата</th>
+        <th>Заказчик</th>
+        <th>Объект</th>
+        <th>PDF</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for x in items %}
+        <tr>
+          <td>{{ x.reg_num }}</td>
+          <td>{{ x.reg_date }}</td>
+          <td>{{ x.customer }}</td>
+          <td>{{ x.object_name }}</td>
+          <td>{% if x.pdf_id %}Есть{% else %}Нет{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">Пока записей нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
