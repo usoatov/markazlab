@@ -22,7 +22,17 @@
         <th>Ro'yxatga olingan raqami</th>
         <th>Sana</th>
         <th>Buyurtmachi</th>
-        <th>Объект</th>
+        <th>Dastur nomi</th>
+        <th>Viloyat</th>
+        <th>Tuman</th>
+        <th>Obyekt turi</th>
+        <th>Obyekt nomi</th>
+        <th>Ish turi</th>
+        <th>Bayonnomani imzolagan shaxs</th>
+        <th>Filial rahbari</th>
+        <th>Sinov o'tkazgan mutaxassis</th>
+        <th>Muvofiq</th>
+        <th>Kitob raqami</th>
         <th>PDF</th>
       </tr>
     </thead>
@@ -32,8 +42,41 @@
           <td>{{ x.reg_num }}</td>
           <td>{{ x.reg_date }}</td>
           <td>{{ x.customer }}</td>
+          <td> {{ x.prog }} </td>
+          <td> {{ x.region }} </td>
+          <td> {{ x.district }} </td>
+          <td>{{ x.object_type }}</td>
           <td>{{ x.object_name }}</td>
-          <td>{% if x.pdf_id %}Есть{% else %}Нет{% endif %}</td>
+          <td>{{ x.work_type }}</td>
+          <td>{{ x.signed_person }}</td>
+          <td>{{ x.branch_manager }}</td>
+          <td>{{ x.specialist }}</td>
+          <td>{{ x.is_mutch }}</td>
+          <td>{{ x.book_number }}</td>
+          
+          <td>
+            {% if x.pdf_id %}
+              <!-- Просмотр -->
+              <a href="{% url 'pdf_view' x.pdf_id %}" title="Просмотреть" target="_blank">
+                👁
+              </a>
+
+              <!-- Скачать -->
+              <a href="{% url 'pdf_download' x.pdf_id %}" title="Скачать">
+                ⬇
+              </a>
+
+              <!-- Удалить -->
+              <a href="{% url 'pdf_delete' x.id %}"
+                title="Удалить"
+                onclick="return confirm('Удалить PDF файл?');">
+                🗑
+              </a>
+            {% else %}
+              —
+            {% endif %}
+          </td>          
+
         </tr>
       {% empty %}
         <tr><td colspan="5">Пока записей нет</td></tr>

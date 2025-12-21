@@ -3,11 +3,7 @@ from .models import Arxiv, PdfStorage
 
 
 class ArxivForm(forms.ModelForm):
-    # Поле для загрузки PDF (не из модели напрямую)
-    pdf_file = forms.FileField(
-        required=False,
-        help_text="Загрузите PDF (5–10 MB)",
-    )
+    pdf_file = forms.FileField(required=False, label="PDF файл")
 
     class Meta:
         model = Arxiv
@@ -19,22 +15,14 @@ class ArxivForm(forms.ModelForm):
             "signed_person", "branch_manager", "specialist",
             "is_mutch", "book_number",
         ]
-        widgets = {
-            "reg_date": forms.DateInput(attrs={"type": "date"}),
-        }
+        widgets = {"reg_date": forms.DateInput(attrs={"type": "date"})}
 
     def clean_pdf_file(self):
         f = self.cleaned_data.get("pdf_file")
         if not f:
             return f
-
-        # Проверка типа
         if f.content_type not in ("application/pdf",):
-            raise forms.ValidationError("Файл должен быть PDF.")
-
-        # Проверка размера (например до 15MB)
-        max_mb = 15
-        if f.size > max_mb * 1024 * 1024:
-            raise forms.ValidationError(f"PDF не должен быть больше {max_mb} MB.")
-
+            raise forms.ValidationError("Только PDF файл.")
+        if f.size > 15 * 1024 * 1024:
+            raise forms.ValidationError("PDF не должен быть больше 15 MB.")
         return f
