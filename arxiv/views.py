@@ -11,6 +11,7 @@ from .models import Arxiv
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import District
+from django.core.paginator import Paginator
 
 @login_required
 def arxiv_create(request):
@@ -146,22 +147,49 @@ def pdf_download(request, pdf_id: int):
     resp["Content-Disposition"] = f"attachment; filename*=UTF-8''{filename}"
     return resp
 
+@login_required
 def arxiv_list(request):
     q = request.GET.get("q", "").strip()
+    field = request.GET.get("field", "all")  # all | reg_num | customer | object_name | book_number
+    page_number = request.GET.get("page", 1)
 
-    qs = Arxiv.objects.select_related(
-        "prog", "region", "district", "object_type", "pdf"
-    ).all()
+    qs = Arxiv.objects.all().prefetch_related("prog", "region", "district", "object_type", "pdf").order_by("-id")
+
+    # список разрешённых полей для поиска (чтобы не было “инъекций” через GET)
+    allowed_fields = {"all", "reg_num", "customer", "object_name", "book_number"}
+    if field not in allowed_fields:
+        field = "all"
 
     if q:
-        qs = qs.filter(
-            Q(reg_num__icontains=q) |
-            Q(customer__icontains=q) |
-            Q(object_name__icontains=q) |
-            Q(book_number__icontains=q)
-        )
+        if field == "all":
+            qs = qs.filter(
+                Q(reg_num__icontains=q) |
+                Q(customer__icontains=q) |
+                Q(object_name__icontains=q) |
+                Q(book_number__icontains=q)
+            )
+        else:
+            qs = qs.filter(**{f"{field}__icontains": q})
 
-    return render(request, "arxiv/arxiv_list.html", {"items": qs, "q": q})
+    # можно добавить сортировку
+    qs = qs.order_by("-id")
+
+    paginator = Paginator(qs, 10)  # <-- сколько записей на страницу
+    page_obj = paginator.get_page(page_number)
+
+    # чтобы при клике Next/Prev сохранялись q и field
+    params = request.GET.copy()
+    if "page" in params:
+        params.pop("page")
+    base_qs = params.urlencode()
+
+    return render(request, "arxiv/arxiv_list.html", {
+        "page_obj": page_obj,   # пагинация
+        "items": page_obj.object_list,  # если в шаблоне уже используется items
+        "q": q,
+        "field": field,
+        "base_qs": base_qs,
+    })
 
 @login_required
 def districts_by_region(request):

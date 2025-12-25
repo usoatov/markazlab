@@ -11,10 +11,22 @@
     <a href="{% url 'arxiv_create' %}">+ Добавить запись</a>
   </div>
 
-  <form method="get" style="margin-bottom:12px;">
-    <input name="q" value="{{ q }}" placeholder="Поиск: reg_num, заказчик, объект..." />
-    <button type="submit">Найти</button>
-  </form>
+  <form method="get" class="mb-3">
+  <select name="field">
+    <option value="all" {% if field == "all" %}selected{% endif %}>Все поля</option>
+    <option value="reg_num" {% if field == "reg_num" %}selected{% endif %}>Рег. номер</option>
+    <option value="customer" {% if field == "customer" %}selected{% endif %}>Заказчик</option>
+    <option value="object_name" {% if field == "object_name" %}selected{% endif %}>Наименование объекта</option>
+    <option value="book_number" {% if field == "book_number" %}selected{% endif %}>Номер книги</option>
+  </select>
+
+  <input type="text" name="q" value="{{ q }}" placeholder="Поиск..." />
+  <button type="submit">Найти</button>
+
+  {% if q %}
+    <a href="{% url 'arxiv_list' %}">Сброс</a>
+  {% endif %}
+</form>
 
   {% if messages %}
   <ul>
@@ -99,9 +111,49 @@
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="5">Пока записей нет</td></tr>
+        <tr><td colspan="16">Пока записей нет</td></tr>
       {% endfor %}
     </tbody>
   </table>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination" style="margin-top:12px; display:flex; justify-content:center; gap:6px; flex-wrap:wrap; align-items:center;">
+    
+    {# Prev #}
+    {% if page_obj.has_previous %}
+      <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page=1">« Birinchi</a>
+      <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Orqaga</a>
+    {% else %}
+      <span>« Birinchi</span>
+      <span>‹ Orqaga</span>
+    {% endif %}
+
+    {# Page numbers (окно вокруг текущей страницы) #}
+    {% for num in page_obj.paginator.page_range %}
+      {% if num == page_obj.number %}
+        <strong style="padding:2px 6px; border:1px solid #000;">{{ num }}</strong>
+      {% elif num >= page_obj.number|add:'-3' and num <= page_obj.number|add:'3' %}
+        <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ num }}">{{ num }}</a>
+      {% elif num == 1 or num == page_obj.paginator.num_pages %}
+        <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ num }}">{{ num }}</a>
+      {% elif num == page_obj.number|add:'-4' or num == page_obj.number|add:'4' %}
+        <span>…</span>
+      {% endif %}
+    {% endfor %}
+
+    {# Next #}
+    {% if page_obj.has_next %}
+      <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.next_page_number }}">Keyingi ›</a>
+      <a href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Oxirgi »</a>
+    {% else %}
+      <span>Keyingi ›</span>
+      <span>Oxirgi »</span>
+    {% endif %}
+
+    <span style="margin-left:8px;">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+  </div>
+  {% endif %}
 </body>
 </html>
