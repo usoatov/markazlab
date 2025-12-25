@@ -78,12 +78,6 @@ class ObjectType(models.Model):
 class WorkType(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
-    class Meta:
-        db_table = "work_type"
-        ordering = ["name"]
-
-    def __str__(self):
-        return self.name
 
 
 # --- Основная таблица архива ---
@@ -118,7 +112,7 @@ class Arxiv(models.Model):
     object_type = models.ForeignKey(ObjectType, verbose_name="Obyekt turi", on_delete=models.PROTECT, related_name="arxiv_items")
     object_name = models.CharField('Ob`yekt nomi', max_length=255)                 # наименование объекта
 
-    work_type = models.ForeignKey(WorkType, on_delete=models.PROTECT, related_name="arxiv_items")
+    work_type = models.CharField("Ish turi", max_length=255)
 
     signed_person = models.CharField('Bayonnomani imzolagan shaxs', max_length=255)               # подписавший человек
     branch_manager = models.CharField('Filial rahbari', max_length=255)              # руководитель филиала

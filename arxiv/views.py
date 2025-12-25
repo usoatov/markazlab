@@ -1,6 +1,6 @@
 import hashlib
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from urllib.parse import quote
@@ -10,6 +10,7 @@ from django.db.models import Q
 from .models import Arxiv
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from .models import District
 
 @login_required
 def arxiv_create(request):
@@ -41,6 +42,67 @@ def arxiv_create(request):
         form = ArxivForm()
 
     return render(request, "arxiv/arxiv_form.html", {"form": form})
+
+@login_required
+def arxiv_edit(request, pk: int):
+    arxiv = get_object_or_404(Arxiv, pk=pk)
+
+    if request.method == "POST":
+        form = ArxivForm(request.POST, request.FILES, instance=arxiv)
+        if form.is_valid():
+            arxiv = form.save(commit=False)
+
+            pdf_file = form.cleaned_data.get("pdf_file")
+            if pdf_file:
+                data = pdf_file.read()
+                sha256 = hashlib.sha256(data).hexdigest()
+
+                pdf_obj, _ = PdfStorage.objects.get_or_create(
+                    sha256=sha256,
+                    defaults={
+                        "file_name": pdf_file.name,
+                        "mime_type": "application/pdf",
+                        "file_size": pdf_file.size,
+                        "content": data,
+                        "uploaded_by": request.user,
+                    },
+                )
+                arxiv.pdf = pdf_obj
+
+            arxiv.save()
+            return redirect("arxiv_list")
+    else:
+        form = ArxivForm(instance=arxiv)
+
+    return render(request, "arxiv/arxiv_form.html", {"form": form, "arxiv": arxiv})
+
+@login_required
+def arxiv_delete(request, pk: int):
+    arxiv = get_object_or_404(Arxiv, pk=pk)
+
+    if request.method != "POST":
+        messages.warning(request, "Удаление нужно подтверждать.")
+        return redirect("arxiv_list")
+
+    pdf = arxiv.pdf  # запоминаем связанный PDF
+
+    # 1) удаляем запись архива
+    arxiv.delete()
+
+    # 2) удаляем PDF из PdfStorage (если есть)
+    if pdf:
+        try:
+            pdf.delete()
+        except ProtectedError:
+            # Значит этот pdf ещё используется другими записями Arxiv
+            messages.warning(
+                request,
+                "Запись удалена, но PDF не удалён, потому что он привязан к другим документам."
+            )
+            return redirect("arxiv_list")
+
+    messages.success(request, "Запись и PDF удалены.")
+    return redirect("arxiv_list")
 
 @login_required
 def pdf_view(request, pdf_id):
@@ -88,7 +150,7 @@ def arxiv_list(request):
     q = request.GET.get("q", "").strip()
 
     qs = Arxiv.objects.select_related(
-        "prog", "region", "district", "object_type", "work_type", "pdf"
+        "prog", "region", "district", "object_type", "pdf"
     ).all()
 
     if q:
@@ -100,3 +162,13 @@ def arxiv_list(request):
         )
 
     return render(request, "arxiv/arxiv_list.html", {"items": qs, "q": q})
+
+@login_required
+def districts_by_region(request):
+    region_id = request.GET.get("region_id")
+    if not region_id:
+        return JsonResponse({"results": []})
+
+    qs = District.objects.filter(region_id=region_id).order_by("name")
+    data = [{"id": d.id, "name": d.name} for d in qs]
+    return JsonResponse({"results": data})

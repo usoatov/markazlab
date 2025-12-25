@@ -16,6 +16,14 @@
     <button type="submit">Найти</button>
   </form>
 
+  {% if messages %}
+  <ul>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   <table border="1" cellpadding="6" cellspacing="0">
     <thead>
       <tr>
@@ -34,6 +42,7 @@
         <th>Muvofiq</th>
         <th>Kitob raqami</th>
         <th>PDF</th>
+        <th>Действия</th>
       </tr>
     </thead>
     <tbody>
@@ -76,7 +85,18 @@
               —
             {% endif %}
           </td>          
-
+          <td>
+            <a href="{% url 'arxiv_edit' x.id %}" title="Редактировать">✏️</a>
+            <form method="post"
+                  action="{% url 'arxiv_delete' x.id %}"
+                  style="display:inline;"
+                  onsubmit="return confirm('Удалить запись {{ x.reg_num }}?');">
+              {% csrf_token %}
+              <button type="submit" title="Удалить" style="border:none;background:none;cursor:pointer;">
+                🗑
+              </button>
+            </form>
+          </td>
         </tr>
       {% empty %}
         <tr><td colspan="5">Пока записей нет</td></tr>

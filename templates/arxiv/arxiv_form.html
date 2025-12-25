@@ -2,10 +2,12 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>Создать запись Arxiv</title>
+  <title> Arxiv</title>
 </head>
 <body>
-  <h2>Создать запись Arxiv</h2>
+  <h2>
+    {% if arxiv %}Редактировать: {{ arxiv.reg_num }}{% else %}Создать запись{% endif %}
+  </h2>
 
   <p>
     <a href="{% url 'arxiv_list' %}">← Назад к списку</a>
@@ -16,5 +18,56 @@
     {{ form.as_p }}
     <button type="submit">Сохранить</button>
   </form>
+  <script>
+  (function () {
+    const regionSelect = document.getElementById("id_region");
+    const districtSelect = document.getElementById("id_district");
+
+    if (!regionSelect || !districtSelect) return;
+
+    const initialDistrict = districtSelect.value;
+
+    function setDistrictOptions(items, keepSelectedId) {
+      districtSelect.innerHTML = "";
+      const optEmpty = document.createElement("option");
+      optEmpty.value = "";
+      optEmpty.textContent = "---------";
+      districtSelect.appendChild(optEmpty);
+
+      for (const it of items) {
+        const opt = document.createElement("option");
+        opt.value = it.id;
+        opt.textContent = it.name;
+        if (keepSelectedId && String(it.id) === String(keepSelectedId)) {
+          opt.selected = true;
+        }
+        districtSelect.appendChild(opt);
+      }
+    }
+
+    async function loadDistricts(regionId, keepSelectedId) {
+      if (!regionId) {
+        setDistrictOptions([], null);
+        return;
+      }
+
+      const url = "{% url 'districts_by_region' %}" + "?region_id=" + encodeURIComponent(regionId);
+      const resp = await fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}});
+      const data = await resp.json();
+      setDistrictOptions(data.results || [], keepSelectedId);
+    }
+
+    // при смене области — грузим районы и сбрасываем выбор
+    regionSelect.addEventListener("change", function () {
+      loadDistricts(regionSelect.value, null);
+    });
+
+    // при открытии формы редактирования — подгружаем районы для текущей области
+    // и сохраняем выбранный район
+    if (regionSelect.value) {
+      loadDistricts(regionSelect.value, initialDistrict);
+    }
+  })();
+</script>
 </body>
 </html>

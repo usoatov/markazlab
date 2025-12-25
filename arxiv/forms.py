@@ -26,3 +26,13 @@ class ArxivForm(forms.ModelForm):
         if f.size > 15 * 1024 * 1024:
             raise forms.ValidationError("PDF не должен быть больше 15 MB.")
         return f
+    
+    def clean(self):
+        cleaned = super().clean()
+        region = cleaned.get("region")
+        district = cleaned.get("district")
+
+        if region and district:
+            if district.region_id != region.id:
+                self.add_error("district", "Выбранный район не принадлежит выбранной области.")
+        return cleaned
